@@ -62,6 +62,20 @@ public:
             head = n;
         }
     }
+
+    void append(int x) {
+        Node* n = Node::create(x);
+        if (isEmpty()) {
+            head = tail = n;
+        } else {
+            tail->next = n;
+            tail = n;
+        }
+    }
+
+    void operator+= (int x) {
+        this->append(x);
+    }
 };
 
 void foo(List list) {
@@ -76,6 +90,9 @@ int main() {
     l.push(n);
     l.push(5);
     foo(l);
+
+    l.append(42);
+    l += 30;
 
     return 0;
 }
