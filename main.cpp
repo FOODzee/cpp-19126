@@ -1,30 +1,39 @@
 #include <cstdio>
-#include <cstdlib>
 
 struct List {
     int x;
+private:
     List* next;
-};
 
-List* createList(int x) {
-    List* n = (List *) malloc(sizeof(List));
-    n->next = nullptr;
-    n->x = x;
-    return n;
-}
-
-void destroyList(List* list) {
-    if (list -> next != nullptr) {
-        destroyList(list->next);
+    List(int x) {
+        next = nullptr;
+        this->x = x;
     }
-    free(list);
-}
+
+public:
+    static List* create(int x){
+        return new List(x);
+    }
+
+    ~List() {
+        delete next;
+    }
+
+    List* push(int x) {
+        List* n = new List(x);
+        n->next = this;
+        return n;
+    }
+};
 
 int main() {
     int n;
     scanf("%d", &n);
-    List* list = createList(n);
+    List* list = List::create(n);
     printf("%d", list->x);
-    destroyList(list);
+    scanf("%d", &n);
+    list = list->push(n);
+    delete list;
+
     return 0;
 }
