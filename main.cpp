@@ -1,39 +1,81 @@
 #include <cstdio>
 
-struct List {
+class Node {
     int x;
-private:
-    List* next;
+    Node* next;
 
-    List(int x) {
+    Node(int x) {
         next = nullptr;
         this->x = x;
     }
 
+    friend class List;
+
 public:
-    static List* create(int x){
-        return new List(x);
+    static Node* create(int x){
+        return new Node(x);
+    }
+
+    ~Node() {
+        delete next;
+    }
+};
+
+class List {
+    Node* head;
+    Node* tail;
+
+public:
+    List() {
+        head = nullptr;
+        tail = nullptr;
+    }
+    bool isEmpty() const { return head == nullptr; }
+
+    List(const List& l) {
+        if (l.isEmpty()) {
+            head = tail = nullptr;
+        } else {
+            head = Node::create(l.head->x);
+            Node* prev = head;
+            Node* p = l.head->next;
+            while (p != nullptr) {
+                prev->next = Node::create(p->x);
+                prev = prev->next;
+                p = p->next;
+            }
+            tail = prev;
+        }
     }
 
     ~List() {
-        delete next;
+        delete head;
+        tail = nullptr;
     }
 
-    List* push(int x) {
-        List* n = new List(x);
-        n->next = this;
-        return n;
+    void push(int x) {
+        Node* n = Node::create(x);
+        if (isEmpty()) {
+            head = tail = n;
+        } else {
+            n->next = head;
+            head = n;
+        }
     }
 };
+
+void foo(List list) {
+    list.push(6);
+}
 
 int main() {
     int n;
     scanf("%d", &n);
-    List* list = List::create(n);
-    printf("%d", list->x);
-    scanf("%d", &n);
-    list = list->push(n);
-    delete list;
+
+    List l;
+    l.push(n);
+    l.push(5);
+    foo(l);
 
     return 0;
 }
