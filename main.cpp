@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <algorithm>
 
 class Node {
     int x;
@@ -53,6 +54,17 @@ public:
         tail = nullptr;
     }
 
+    List& operator= (List list) {
+        swap(*this, list);
+        return *this;
+    }
+
+    friend void swap(List& l1, List& l2) {
+        using std::swap;
+        swap(l1.head, l2.head);
+        swap(l1.tail, l2.tail);
+    }
+
     void push(int x) {
         Node* n = Node::create(x);
         if (isEmpty()) {
@@ -87,12 +99,13 @@ int main() {
     scanf("%d", &n);
 
     List l;
+    List l2;
+    l2.push(42);
+
     l.push(n);
     l.push(5);
-    foo(l);
 
-    l.append(42);
-    l += 30;
+    l2 = l;
 
     return 0;
 }
