@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <algorithm>
+#include <iostream>
 
 class Node {
     int x;
@@ -20,6 +21,12 @@ public:
     ~Node() {
         delete next;
     }
+
+    friend std::ostream& operator<< (std::ostream& out, const Node& node) {
+        out << node.x;
+        return out;
+    }
+    friend std::ostream& operator<< (std::ostream& out, const List& list);
 };
 
 class List {
@@ -85,18 +92,41 @@ public:
         }
     }
 
-    void operator+= (int x) {
-        this->append(x);
+    void operator+= (int x);
+
+    friend std::ostream& operator<< (std::ostream& out, const List& list) {
+        if (list.isEmpty()) {
+            out << "Empty";
+        } else {
+            Node* ptr = list.head;
+            while (ptr != nullptr) {
+                out << *ptr << "; ";
+                ptr = ptr->next;
+            }
+        }
+        return out;
+    }
+
+    friend std::istream& operator>> (std::istream& in, List& list) {
+        int x;
+        in >> x;
+        list += x;
+        // TODO: implement cycle?
     }
 };
+
+void List::operator+=(int x) {
+    this->append(x);
+}
 
 void foo(List list) {
     list.push(6);
 }
 
 int main() {
-    int n;
-    scanf("%d", &n);
+    int n, k;
+    std::cin >> n >> k;
+    std::cout << n << k << std::endl;
 
     List l;
     List l2;
@@ -104,6 +134,8 @@ int main() {
 
     l.push(n);
     l.push(5);
+
+    std::cout << l;
 
     l2 = l;
 
