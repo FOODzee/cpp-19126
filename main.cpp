@@ -1,35 +1,36 @@
 #include <cstdio>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 
-class Node {
-    int x;
-    Node* next;
-
-    Node(int x) {
-        next = nullptr;
-        this->x = x;
-    }
-
-    friend class List;
-
-public:
-    static Node* create(int x){
-        return new Node(x);
-    }
-
-    ~Node() {
-        delete next;
-    }
-
-    friend std::ostream& operator<< (std::ostream& out, const Node& node) {
-        out << node.x;
-        return out;
-    }
-    friend std::ostream& operator<< (std::ostream& out, const List& list);
-};
+using namespace std;
 
 class List {
+protected:
+    class Node {
+    public:
+        int x;
+        Node* next;
+
+        Node(int x) {
+            next = nullptr;
+            this->x = x;
+        }
+
+        static Node* create(int x){
+            return new Node(x);
+        }
+
+        ~Node() {
+            delete next;
+        }
+
+        friend std::ostream& operator<< (std::ostream& out, const Node& node) {
+            out << node.x;
+            return out;
+        }
+    };
+
     Node* head;
     Node* tail;
 
@@ -72,16 +73,6 @@ public:
         swap(l1.tail, l2.tail);
     }
 
-    void push(int x) {
-        Node* n = Node::create(x);
-        if (isEmpty()) {
-            head = tail = n;
-        } else {
-            n->next = head;
-            head = n;
-        }
-    }
-
     void append(int x) {
         Node* n = Node::create(x);
         if (isEmpty()) {
@@ -119,31 +110,43 @@ public:
     }
 };
 
+class Stack : List {
+public:
+    int pop() {
+        if (isEmpty()) {
+            std::cout << "pop from empty";
+            exit(1);
+        }
+        Node* n = head;
+        head = head->next;
+        int x = n->x;
+        delete n;
+        return x;
+    }
+
+    void push(int x) {
+        Node* n = Node::create(x);
+        if (isEmpty()) {
+            head = tail = n;
+        } else {
+            n->next = head;
+            head = n;
+        }
+    }
+
+    bool isEmpty() const {
+        return List::isEmpty();
+    }
+};
+
 void List::operator+=(int x) {
     this->append(x);
 }
 
-void foo(List list) {
-    list.push(6);
-}
-
 int main() {
-    int n, k;
-    std::cin >> n >> k;
-    std::cout << n << k << std::endl;
-
-    List l;
-    List l2;
-    l2.push(42);
-
-    l.push(n);
-    l.push(5);
-
-    std::cin >> l;
-
-    std::cout << l;
-
-    l2 = l;
+    Stack st;
+    st.push(42);
+    std::cout << st.pop();
 
     return 0;
 }
