@@ -5,7 +5,23 @@
 
 using namespace std;
 
-class List {
+
+class Stack {
+public:
+    virtual int pop() = 0;
+    virtual void push(int x) = 0;
+
+    virtual bool isEmpty() const = 0;
+
+    virtual void print(std::ostream& out) const = 0;
+
+    friend std::ostream& operator<< (std::ostream& out, const Stack& stack) {
+        stack.print(out);
+        return out;
+    }
+};
+
+class List : public Stack {
 protected:
     class Node {
     public:
@@ -114,19 +130,12 @@ public:
     operator bool() const {
         return isEmpty();
     }
-};
 
-class Stack : public List {
-    int depth;
-public:
-    Stack() : depth(0) {}
-
-    int pop() {
+    int pop() override {
         if (isEmpty()) {
             std::cout << "pop from empty";
             exit(1);
         }
-        depth--;
         Node* n = head;
         head = head->next;
         int x = n->x;
@@ -134,7 +143,7 @@ public:
         return x;
     }
 
-    void push(int x) {
+    void push(int x) override {
         Node* n = Node::create(x);
         if (isEmpty()) {
             head = tail = n;
@@ -142,31 +151,17 @@ public:
             n->next = head;
             head = n;
         }
-        depth++;
-    }
-
-    bool isEmpty() const {
-        return List::isEmpty();
-    }
-
-    virtual void print(std::ostream& out) const override {
-        List::print(out);
-        out << "; depth = " << depth;
-    }
-
-    friend std::ostream& operator<< (std::ostream& out, const Stack& stack) {
-        stack.print(out);
-        return out;
     }
 };
 
 int main() {
-    Stack st;
-    st.push(42);
-    std::cout << st << std::endl;
+    List list;
+    list.push(42);
+    std::cout << list << std::endl;
 
-    List& l = st;
-    std::cout << l;
+    Stack& stack = list;
+    stack.push(12);
+    std::cout << stack;
 
     return 0;
 }
