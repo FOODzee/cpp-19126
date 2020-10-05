@@ -83,18 +83,24 @@ public:
         }
     }
 
-    void operator+= (int x);
+    void operator+=(int x) {
+        this->append(x);
+    }
 
-    friend std::ostream& operator<< (std::ostream& out, const List& list) {
-        if (list.isEmpty()) {
+    virtual void print(std::ostream& out) const {
+        if (this->isEmpty()) {
             out << "Empty";
         } else {
-            Node* ptr = list.head;
+            Node* ptr = head;
             while (ptr != nullptr) {
                 out << *ptr << "; ";
                 ptr = ptr->next;
             }
         }
+    }
+
+    friend std::ostream& operator<< (std::ostream& out, const List& list) {
+        list.print(out);
         return out;
     }
 
@@ -110,13 +116,17 @@ public:
     }
 };
 
-class Stack : List {
+class Stack : public List {
+    int depth;
 public:
+    Stack() : depth(0) {}
+
     int pop() {
         if (isEmpty()) {
             std::cout << "pop from empty";
             exit(1);
         }
+        depth--;
         Node* n = head;
         head = head->next;
         int x = n->x;
@@ -132,21 +142,31 @@ public:
             n->next = head;
             head = n;
         }
+        depth++;
     }
 
     bool isEmpty() const {
         return List::isEmpty();
     }
-};
 
-void List::operator+=(int x) {
-    this->append(x);
-}
+    virtual void print(std::ostream& out) const override {
+        List::print(out);
+        out << "; depth = " << depth;
+    }
+
+    friend std::ostream& operator<< (std::ostream& out, const Stack& stack) {
+        stack.print(out);
+        return out;
+    }
+};
 
 int main() {
     Stack st;
     st.push(42);
-    std::cout << st.pop();
+    std::cout << st << std::endl;
+
+    List& l = st;
+    std::cout << l;
 
     return 0;
 }
