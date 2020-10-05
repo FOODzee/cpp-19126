@@ -109,9 +109,13 @@ public:
 
     friend std::istream& operator>> (std::istream& in, List& list) {
         int x;
-        in >> x;
-        list += x;
-        // TODO: implement cycle?
+        while (in >> x) {
+            list += x;
+        }
+    }
+
+    operator bool() const {
+        return isEmpty();
     }
 };
 
@@ -134,6 +138,8 @@ int main() {
 
     l.push(n);
     l.push(5);
+
+    std::cin >> l;
 
     std::cout << l;
 
