@@ -154,10 +154,59 @@ public:
     }
 };
 
+class A {
+protected:
+    const int size;
+    int* arr;
+public:
+    A(int size): size(size), arr(new int[size]) {}
+
+    A(const A& a) : A(a.size) {
+        for (int i = 0; i < size; i++) {
+            arr[i] = a.arr[i];
+        }
+    }
+
+    virtual ~A() {
+        delete[] arr;
+    }
+};
+
+class B : public A {
+    int* arr2;
+public:
+    B(int size): A(size), arr2(new int[size]) {}
+
+    B(const B& b) : B(b.size) {
+        for (int i = 0; i < size; i++) {
+            arr[i] = b.arr[i];
+            arr2[i] = b.arr2[i];
+        }
+    }
+
+    ~B() override {
+        delete[] arr2;
+    }
+};
+
+void foo(Stack& l) {
+    l.push(420);
+}
+
+void foo(A* a) {
+    // actions
+    delete a;
+}
+
 int main() {
+    B* b = new B(2);
+    foo(b);
+
     List list;
     list.push(42);
     std::cout << list << std::endl;
+
+    foo(list);
 
     Stack& stack = list;
     stack.push(12);
