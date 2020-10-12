@@ -5,25 +5,90 @@
 
 using namespace std;
 
-
-class Stack {
+class Collection {
 public:
-    virtual int pop() = 0;
-    virtual void push(int x) = 0;
-
     virtual bool isEmpty() const = 0;
 
     virtual void print(std::ostream& out) const = 0;
 
-    virtual ~Stack() = 0;
+    virtual ~Collection() = 0;
 
-    friend std::ostream& operator<< (std::ostream& out, const Stack& stack) {
+    friend std::ostream& operator<< (std::ostream& out, const Collection& stack) {
         stack.print(out);
         return out;
     }
 };
 
-class List : public Stack {
+class Stack : public Collection {
+public:
+    virtual int pop() = 0;
+    virtual void push(int x) = 0;
+};
+
+class Queue {
+public:
+    virtual int dequeue() = 0;
+    virtual void enqueue(int x) = 0;
+};
+
+class ArrayList : public Stack {
+    int size;
+    int end;
+    int* arr;
+
+    void ensureCapacity() {
+        if (end == size) {
+            int newSize = size * 2;
+            int* newArr = new int[newSize];
+            delete[] arr;
+            arr = newArr;
+            size = newSize;
+        }
+    }
+public:
+    ArrayList() : ArrayList(16) {}
+
+    ArrayList(int size): end(0), size(size), arr(new int[size]) {}
+
+    ArrayList(const ArrayList& a) : ArrayList(a.size) {
+        for (int i = 0; i < size; i++) {
+            arr[i] = a.arr[i];
+        }
+    }
+
+    ~ArrayList() override {
+        delete[] arr;
+    }
+
+    int pop() {
+        if (isEmpty()) {
+            cout << "Stack underflow";
+            exit(-1);
+        }
+        return arr[--end];
+    }
+
+    void push(int x) {
+        ensureCapacity();
+        arr[end++] = x;
+    }
+
+    bool isEmpty() const {
+        return end == 0;
+    }
+    
+    void print(std::ostream& out) const {
+        if (isEmpty()) {
+            out << " Empty ArrayList";
+        } else {
+            for (int i = 0; i < end; i++) {
+                out << arr[i] << " ";
+            }
+        }
+    }
+};
+
+class LinkedList : public Stack, public Queue {
 protected:
     class Node {
     public:
@@ -53,13 +118,13 @@ protected:
     Node* tail;
 
 public:
-    List() {
+    LinkedList() {
         head = nullptr;
         tail = nullptr;
     }
     bool isEmpty() const { return head == nullptr; }
 
-    List(const List& l) {
+    LinkedList(const LinkedList& l) {
         if (l.isEmpty()) {
             head = tail = nullptr;
         } else {
@@ -75,17 +140,17 @@ public:
         }
     }
 
-    ~List() {
+    ~LinkedList() {
         delete head;
         tail = nullptr;
     }
 
-    List& operator= (List list) {
+    LinkedList& operator= (LinkedList list) {
         swap(*this, list);
         return *this;
     }
 
-    friend void swap(List& l1, List& l2) {
+    friend void swap(LinkedList& l1, LinkedList& l2) {
         using std::swap;
         swap(l1.head, l2.head);
         swap(l1.tail, l2.tail);
@@ -117,12 +182,12 @@ public:
         }
     }
 
-    friend std::ostream& operator<< (std::ostream& out, const List& list) {
+    friend std::ostream& operator<< (std::ostream& out, const LinkedList& list) {
         list.print(out);
         return out;
     }
 
-    friend std::istream& operator>> (std::istream& in, List& list) {
+    friend std::istream& operator>> (std::istream& in, LinkedList& list) {
         int x;
         while (in >> x) {
             list += x;
@@ -154,19 +219,50 @@ public:
             head = n;
         }
     }
+
+    int dequeue() override {
+        if (isEmpty()) {
+            std::cout << "dequeue from empty";
+            exit(1);
+        }
+        Node* n = head;
+        head = head->next;
+        int res = n->x;
+        delete n;
+        return res;
+    }
+
+    void enqueue(int x) override {
+        Node* n = Node::create(x);
+        if (isEmpty()) {
+            head = tail = n;
+        } else {
+            tail->next = n;
+            tail = n;
+        }
+    }
 };
 
-void foo(Stack* l) {
-    l->push(420);
-    delete l;
+void foo(Stack& l) {
+    l.push(420);
+}
+
+void bar(Queue& q) {
+    q.enqueue(123);
 }
 
 int main() {
-    List list;
+    LinkedList list;
     list.push(42);
     std::cout << list << std::endl;
 
+    bar(list);
     foo(list);
+
+    ArrayList arrL;
+    arrL.push(14);
+
+    foo(arrL);
 
     Stack& stack = list;
     stack.push(12);
