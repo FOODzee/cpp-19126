@@ -1,7 +1,5 @@
-#include <cstdio>
 #include <algorithm>
 #include <iostream>
-#include <fstream>
 
 using namespace std;
 
@@ -11,7 +9,7 @@ public:
 
     virtual void print(std::ostream& out) const = 0;
 
-    virtual ~Collection() = 0;
+    virtual ~Collection() {};
 
     friend std::ostream& operator<< (std::ostream& out, const Collection& stack) {
         stack.print(out);
@@ -25,7 +23,7 @@ public:
     virtual void push(int x) = 0;
 };
 
-class Queue {
+class Queue : public Collection {
 public:
     virtual int dequeue() = 0;
     virtual void enqueue(int x) = 0;
@@ -60,7 +58,7 @@ public:
         delete[] arr;
     }
 
-    int pop() {
+    int pop() override {
         if (isEmpty()) {
             cout << "Stack underflow";
             exit(-1);
@@ -68,16 +66,16 @@ public:
         return arr[--end];
     }
 
-    void push(int x) {
+    void push(int x) override {
         ensureCapacity();
         arr[end++] = x;
     }
 
-    bool isEmpty() const {
+    bool isEmpty() const override {
         return end == 0;
     }
     
-    void print(std::ostream& out) const {
+    void print(std::ostream& out) const override {
         if (isEmpty()) {
             out << " Empty ArrayList";
         } else {
@@ -140,7 +138,7 @@ public:
         }
     }
 
-    ~LinkedList() {
+    ~LinkedList() override {
         delete head;
         tail = nullptr;
     }
