@@ -1,5 +1,33 @@
 #include <algorithm>
 #include <iostream>
+#include <functional>
+
+template<typename T>
+void showcaseStdHash(T v) {
+    std::cout << std::hash<T>{}(v) << std::endl;
+}
+
+struct Int {
+    int i = 0;
+};
+
+namespace std {
+    template<>
+    struct hash<Int> {
+        int operator() (Int i) {
+            return i.i;
+        }
+    };
+}
+
+int main() {
+    showcaseStdHash<std::string>("abc");
+    showcaseStdHash<int>(42);
+
+    Int i;
+    i.i = 42;
+    showcaseStdHash<Int>(i);
+}
 
 using namespace std;
 
@@ -380,9 +408,7 @@ void bar(Queue& q) {
     q.enqueue(123);
 }
 
-int main() {
-    showcaseIterators();
-    return 0;
+/*int main() {
     LinkedList list;
     list.push(42);
     std::cout << list << std::endl;
@@ -400,4 +426,4 @@ int main() {
     std::cout << stack;
 
     return 0;
-}
+}*/
