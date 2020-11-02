@@ -105,9 +105,33 @@ class DummyMap : public Map<K, V> {
                 return i;
             }
         }
+        for (Pair<K, V>* p = storage; p != storage + N; p++) {
+            if (p->key == key) {
+                return p-storage;
+            }
+        }
         return -1;
     }
 public:
+    class CppIter {
+        int i;
+        const DummyMap<K, V, N>& map;
+
+    public:
+        CppIter(const DummyMap<K, V, N>& map, int i = 0) : map(map), i(i) {}
+
+        bool operator!=(const CppIter& that) const { /*...*/ }
+        CppIter& operator++() {/*...*/}
+        Pair<K, V>* operator->() {/*...*/}
+    };
+
+    CppIter begin() {
+        return CppIter(*this);
+    }
+    CppIter end() {
+        return CppIter(*this, N);
+    }
+
     bool isEmpty() const override {
         return size == 0;
     }
@@ -164,13 +188,13 @@ void showcaseIterators() {
     i2s.add(a1, s1);
     i2s.add(a2, s2);
 
-    //DummyMap<string, int, 2> s2i;
-    //s2i.add(s1, a1);
-    //s2i.add(s2, a2);
+    for (auto i = i2s.begin(); i != i2s.end(); ++i) {
+        cout << i->key << " -> " << i->value << endl;
+    }
 
-    SimpleIterator<Pair<int, string>>* iter1 = i2s.iterator();
+    auto iter1 = i2s.iterator();
     while (iter1->hasNext()) {
-        const Pair<int, string>& p = iter1->next();
+        const auto& p = iter1->next();
         cout << p.key << " -> " << p.value << endl;
     }
     delete iter1;
