@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <functional>
+#include <exception>
 
 template<typename T>
 void showcaseStdHash(T v) {
@@ -19,7 +20,7 @@ namespace std {
         }
     };
 }
-
+/*
 int main() {
     showcaseStdHash<std::string>("abc");
     showcaseStdHash<int>(42);
@@ -27,7 +28,7 @@ int main() {
     Int i;
     i.i = 42;
     showcaseStdHash<Int>(i);
-}
+}*/
 
 using namespace std;
 
@@ -113,24 +114,33 @@ class DummyMap : public Map<K, V> {
         return -1;
     }
 public:
-    class CppIter {
-        int i;
-        const DummyMap<K, V, N>& map;
+    //class CppIter {
+    //    int i;
+    //    const DummyMap<K, V, N>& map;
+//
+    //public:
+    //    CppIter(const DummyMap<K, V, N>& map, int i = 0) : map(map), i(i) {}
+//
+    //    bool operator!=(const CppIter& that) const { /*...*/ }
+    //    CppIter& operator++() {/*...*/}
+    //    Pair<K, V>* operator->() {/*...*/}
+    //};
+//
+    //CppIter begin() {
+    //    return CppIter(*this);
+    //}
+    //CppIter end() {
+    //    return CppIter(*this, N);
+    //}
 
-    public:
-        CppIter(const DummyMap<K, V, N>& map, int i = 0) : map(map), i(i) {}
+    struct KeyNotFound : std::exception {
+        K key;
+        explicit KeyNotFound(const K& key) : key(key) {}
 
-        bool operator!=(const CppIter& that) const { /*...*/ }
-        CppIter& operator++() {/*...*/}
-        Pair<K, V>* operator->() {/*...*/}
+        const char* what() const override {
+            return "No key found!";
+        }
     };
-
-    CppIter begin() {
-        return CppIter(*this);
-    }
-    CppIter end() {
-        return CppIter(*this, N);
-    }
 
     bool isEmpty() const override {
         return size == 0;
@@ -140,8 +150,7 @@ public:
         if (i != -1) {
             return storage[i].value;
         }
-        cout << " No key " << key << " found!";
-        exit(-1);
+        throw KeyNotFound(key);
     }
     bool add(K key, V value) override {
         int i = findPlace(key);
@@ -188,9 +197,9 @@ void showcaseIterators() {
     i2s.add(a1, s1);
     i2s.add(a2, s2);
 
-    for (auto i = i2s.begin(); i != i2s.end(); ++i) {
-        cout << i->key << " -> " << i->value << endl;
-    }
+    //for (auto i = i2s.begin(); i != i2s.end(); ++i) {
+    //    cout << i->key << " -> " << i->value << endl;
+    //}
 
     auto iter1 = i2s.iterator();
     while (iter1->hasNext()) {
@@ -198,6 +207,28 @@ void showcaseIterators() {
         cout << p.key << " -> " << p.value << endl;
     }
     delete iter1;
+
+    i2s.get(124);
+    //..
+}
+
+struct RAII_pointer {
+    int* p;
+    RAII_pointer() : p(new int) {}
+    ~RAII_pointer() { delete p; }
+};
+
+int main() {
+    try {
+        RAII_pointer rp;
+        *rp.p = 42;
+        showcaseIterators();
+
+        cout << "after showcase";
+    } catch (std::exception& e) {
+        cout << e.what();
+    }
+    cout << "after try";
 }
 
 class Stack : public Collection<int> {
