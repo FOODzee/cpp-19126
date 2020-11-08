@@ -114,24 +114,25 @@ class DummyMap : public Map<K, V> {
         return -1;
     }
 public:
-    //class CppIter {
-    //    int i;
-    //    const DummyMap<K, V, N>& map;
-//
-    //public:
-    //    CppIter(const DummyMap<K, V, N>& map, int i = 0) : map(map), i(i) {}
-//
-    //    bool operator!=(const CppIter& that) const { /*...*/ }
-    //    CppIter& operator++() {/*...*/}
-    //    Pair<K, V>* operator->() {/*...*/}
-    //};
-//
-    //CppIter begin() {
-    //    return CppIter(*this);
-    //}
-    //CppIter end() {
-    //    return CppIter(*this, N);
-    //}
+    class CppIter {
+        int i;
+        DummyMap<K, V, N>& map;
+
+    public:
+        CppIter(DummyMap<K, V, N>& map, int i = 0) : map(map), i(i) {}
+
+        bool operator!=(const CppIter& that) const { return this->i != that.i; }
+        CppIter& operator++() { i++; return *this; }
+        Pair<K, V>* operator->() { return &map.storage[i]; }
+        Pair<K, V> operator*() { return map.storage[i]; }
+    };
+
+    CppIter begin() {
+        return CppIter(*this);
+    }
+    CppIter end() {
+        return CppIter(*this, N);
+    }
 
     struct KeyNotFound : std::exception {
         K key;
@@ -197,15 +198,21 @@ void showcaseIterators() {
     i2s.add(a1, s1);
     i2s.add(a2, s2);
 
-    //for (auto i = i2s.begin(); i != i2s.end(); ++i) {
-    //    cout << i->key << " -> " << i->value << endl;
-    //}
+    for (auto i = i2s.begin(); i != i2s.end(); ++i) {
+        cout << i->key << " -> " << i->value << endl;
+    }
+    cout << endl;
+    for (auto i : i2s) {
+        cout << i.key << " -> " << i.value << endl;
+    }
+    cout << endl;
 
     auto iter1 = i2s.iterator();
     while (iter1->hasNext()) {
         const auto& p = iter1->next();
         cout << p.key << " -> " << p.value << endl;
     }
+    cout << endl;
     delete iter1;
 
     i2s.get(124);
