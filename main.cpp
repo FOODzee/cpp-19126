@@ -116,22 +116,27 @@ class DummyMap : public Map<K, V> {
 public:
     class CppIter {
         int i;
-        DummyMap<K, V, N>& map;
+        DummyMap<K, V, N>* map;
 
     public:
-        CppIter(DummyMap<K, V, N>& map, int i = 0) : map(map), i(i) {}
+        CppIter(DummyMap<K, V, N>* map, int i = 0) : map(map), i(i) {}
 
-        bool operator!=(const CppIter& that) const { return this->i != that.i; }
-        CppIter& operator++() { i++; return *this; }
-        Pair<K, V>* operator->() { return &map.storage[i]; }
-        Pair<K, V> operator*() { return map.storage[i]; }
+        bool operator!=(const CppIter& that) const {
+            return this->map != that.map || this->i != that.i;
+        }
+        CppIter& operator++() {
+            i++;
+            return *this;
+        }
+        Pair<K, V>* operator->() { return &map->storage[i]; }
+        Pair<K, V> operator*() { return map->storage[i]; }
     };
 
     CppIter begin() {
-        return CppIter(*this);
+        return CppIter(this);
     }
     CppIter end() {
-        return CppIter(*this, N);
+        return CppIter(this, N);
     }
 
     struct KeyNotFound : std::exception {
@@ -202,6 +207,9 @@ void showcaseIterators() {
         cout << i->key << " -> " << i->value << endl;
     }
     cout << endl;
+
+
+
     for (auto i : i2s) {
         cout << i.key << " -> " << i.value << endl;
     }
