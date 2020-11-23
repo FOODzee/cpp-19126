@@ -31,7 +31,7 @@ void myThreadBody(int iterations) {
     }
 }
 
-int main() {
+int main3() {
     std::thread newThread(myThreadBody, 100);
     for (int i = 0; i < 100; i++) {
         tsp.println("Hello world from main thread");
@@ -103,11 +103,6 @@ public:
         stack.print(out);
         return out;
     }
-};
-
-template<typename T>
-class CppIterator {
-
 };
 
 template<typename K, typename V>
@@ -284,6 +279,7 @@ int main2() {
         cout << e.what();
     }
     cout << "after try";
+    return 0;
 }
 
 class Stack : public Collection<int> {
@@ -384,14 +380,17 @@ protected:
     Node* head;
     Node* tail;
 
+    std::recursive_mutex mtx;
+
 public:
     LinkedList() {
         head = nullptr;
         tail = nullptr;
     }
-    bool isEmpty() const { return head == nullptr; }
+    bool isEmpty() const override { return head == nullptr; }
 
-    LinkedList(const LinkedList& l) {
+    LinkedList(LinkedList& l) {
+        std::lock_guard lock(l.mtx);
         if (l.isEmpty()) {
             head = tail = nullptr;
         } else {
@@ -419,22 +418,11 @@ public:
 
     friend void swap(LinkedList& l1, LinkedList& l2) {
         using std::swap;
+        std::unique_lock lock1(l1.mtx, std::defer_lock);
+        std::unique_lock lock2(l2.mtx, std::defer_lock);
+        std::lock(lock1, lock2);
         swap(l1.head, l2.head);
         swap(l1.tail, l2.tail);
-    }
-
-    void append(int x) {
-        Node* n = Node::create(x);
-        if (isEmpty()) {
-            head = tail = n;
-        } else {
-            tail->next = n;
-            tail = n;
-        }
-    }
-
-    void operator+=(int x) {
-        this->append(x);
     }
 
     virtual void print(std::ostream& out) const {
@@ -456,9 +444,11 @@ public:
 
     friend std::istream& operator>> (std::istream& in, LinkedList& list) {
         int x;
+        std::lock_guard lock(list.mtx);
         while (in >> x) {
-            list += x;
+            list.enqueue(x);
         }
+        return in;
     }
 
     operator bool() const {
@@ -466,6 +456,7 @@ public:
     }
 
     int pop() override {
+        std::lock_guard lock(mtx);
         if (isEmpty()) {
             std::cout << "pop from empty";
             exit(1);
@@ -478,6 +469,7 @@ public:
     }
 
     void push(int x) override {
+        std::lock_guard lock(mtx);
         Node* n = Node::create(x);
         if (isEmpty()) {
             head = tail = n;
@@ -488,6 +480,7 @@ public:
     }
 
     int dequeue() override {
+        std::lock_guard lock(mtx);
         if (isEmpty()) {
             std::cout << "dequeue from empty";
             exit(1);
@@ -500,6 +493,7 @@ public:
     }
 
     void enqueue(int x) override {
+        std::lock_guard lock(mtx);
         Node* n = Node::create(x);
         if (isEmpty()) {
             head = tail = n;
@@ -518,22 +512,10 @@ void bar(Queue& q) {
     q.enqueue(123);
 }
 
-/*int main() {
+int main() {
     LinkedList list;
-    list.push(42);
-    std::cout << list << std::endl;
-
-    bar(list);
-    foo(list);
-
-    ArrayList arrL;
-    arrL.push(14);
-
-    foo(arrL);
-
-    Stack& stack = list;
-    stack.push(12);
-    std::cout << stack;
+    std:cin >> list;
+    cout << list;
 
     return 0;
-}*/
+}
