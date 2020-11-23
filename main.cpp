@@ -3,6 +3,46 @@
 #include <functional>
 #include <exception>
 
+//// multi-threading
+
+#include <thread>
+#include <chrono>
+#include <mutex>
+
+
+class tsPrinter {
+    std::mutex printMTX;
+    std::ostream& out;
+public:
+    explicit tsPrinter(std::ostream& out) : out(out) {}
+
+    template<typename T>
+    void println(T val) {
+        std::lock_guard<std::mutex> lock(printMTX); // RAII
+        out << val << std::endl;
+    }
+};
+tsPrinter tsp(std::cout);
+
+void myThreadBody(int iterations) {
+    for (int i = 0; i < iterations; i++) {
+        tsp.println("Hello world from new thread");
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
+
+int main() {
+    std::thread newThread(myThreadBody, 100);
+    for (int i = 0; i < 100; i++) {
+        tsp.println("Hello world from main thread");
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    newThread.join();
+    return 0;
+}
+
+///////////////
+
 template<typename T>
 void showcaseStdHash(T v) {
     std::cout << std::hash<T>{}(v) << std::endl;
@@ -233,7 +273,7 @@ struct RAII_pointer {
     ~RAII_pointer() { delete p; }
 };
 
-int main() {
+int main2() {
     try {
         RAII_pointer rp;
         *rp.p = 42;
