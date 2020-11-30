@@ -319,8 +319,28 @@ public:
         }
     }
 
+    ArrayList(ArrayList&& a) {
+        size = std::move(a.size);
+        end  = std::move(a.size);
+        arr  = std::move(a.arr);
+        a.arr = nullptr;
+        a.size = a.end = 0;
+    }
+
     ~ArrayList() override {
         delete[] arr;
+    }
+
+    ArrayList& operator=(ArrayList that) {
+        swap(*this, that);
+        return *this;
+    }
+
+    friend void swap(ArrayList& a, ArrayList& b) {
+        using std::swap; // allow ADL (Argument-Dependent-Lookup)
+        swap(a.end, b.end);
+        swap(a.size, b.size);
+        swap(a.arr, b.arr);
     }
 
     int pop() override {
