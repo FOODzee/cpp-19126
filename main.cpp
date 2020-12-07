@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 #include <functional>
 #include <exception>
 
@@ -17,7 +18,7 @@ public:
     explicit tsPrinter(std::ostream& out) : out(out) {}
 
     template<typename T>
-    void println(T val) {
+    void println(const T& val) {
         std::lock_guard<std::mutex> lock(printMTX); // RAII
         out << val << std::endl;
     }
@@ -70,8 +71,6 @@ int main() {
     showcaseStdHash<Int>(i);
 }*/
 
-using namespace std;
-
 template<typename T>
 struct SimpleIterator {
     virtual bool hasNext() = 0;
@@ -84,7 +83,7 @@ class Collection {
 public:
     virtual bool isEmpty() const = 0;
 
-    virtual void print(std::ostream& out) const {
+    virtual void print(std::ostream& out) {
         SimpleIterator<T>* iter = iterator();
         while (iter->hasNext()) {
             out << iter->next() << "; ";
@@ -93,7 +92,7 @@ public:
     }
 
     virtual SimpleIterator<T>* iterator() const {
-        cout << "unimplemented iterator()";
+        std::cout << "unimplemented iterator()";
         exit(-1);
     }
 
@@ -227,7 +226,7 @@ public:
         return new Iter(*this);
     }
 };
-
+/*
 void showcaseIterators() {
     int a1, a2;
     cin >> a1 >> a2;
@@ -261,13 +260,13 @@ void showcaseIterators() {
     i2s.get(124);
     //..
 }
-
+*/
 struct RAII_pointer {
     int* p;
     RAII_pointer() : p(new int) {}
     ~RAII_pointer() { delete p; }
 };
-
+/*
 int main2() {
     try {
         RAII_pointer rp;
@@ -281,7 +280,7 @@ int main2() {
     cout << "after try";
     return 0;
 }
-
+*/
 class Stack : public Collection<int> {
 public:
     virtual int pop() = 0;
@@ -345,7 +344,7 @@ public:
 
     int pop() override {
         if (isEmpty()) {
-            cout << "Stack underflow";
+            std::cout << "Stack underflow";
             exit(-1);
         }
         return arr[--end];
@@ -360,7 +359,7 @@ public:
         return end == 0;
     }
     
-    void print(std::ostream& out) const override {
+    void print(std::ostream& out) override {
         if (isEmpty()) {
             out << " Empty ArrayList";
         } else {
@@ -400,14 +399,19 @@ protected:
     Node* head;
     Node* tail;
 
-    std::recursive_mutex mtx;
+    std::mutex mtx;
+    std::condition_variable elementAdded;
 
 public:
-    LinkedList() {
+    LinkedList() noexcept {
         head = nullptr;
         tail = nullptr;
     }
-    bool isEmpty() const override { return head == nullptr; }
+
+    /** Not thread-safe! Use under lock only! */
+    bool isEmpty() const override {
+        return head == nullptr;
+    }
 
     LinkedList(LinkedList& l) {
         std::lock_guard lock(l.mtx);
@@ -433,6 +437,7 @@ public:
 
     LinkedList& operator= (LinkedList list) {
         swap(*this, list);
+        elementAdded.notify_all();
         return *this;
     }
 
@@ -445,7 +450,8 @@ public:
         swap(l1.tail, l2.tail);
     }
 
-    virtual void print(std::ostream& out) const {
+    void print(std::ostream& out) override {
+        std::lock_guard lock(mtx);
         if (this->isEmpty()) {
             out << "Empty";
         } else {
@@ -457,14 +463,14 @@ public:
         }
     }
 
-    friend std::ostream& operator<< (std::ostream& out, const LinkedList& list) {
+    friend std::ostream& operator<< (std::ostream& out, LinkedList& list) {
         list.print(out);
         return out;
     }
 
     friend std::istream& operator>> (std::istream& in, LinkedList& list) {
         int x;
-        std::lock_guard lock(list.mtx);
+        //std::lock_guard lock(list.mtx); // this requires recursive mutex, but conditional_variable works only for regular ones
         while (in >> x) {
             list.enqueue(x);
         }
@@ -497,19 +503,48 @@ public:
             n->next = head;
             head = n;
         }
+        elementAdded.notify_all();
     }
 
     int dequeue() override {
         std::lock_guard lock(mtx);
         if (isEmpty()) {
-            std::cout << "dequeue from empty";
-            exit(1);
+            throw std::exception("Empty list!");
         }
         Node* n = head;
+        n->next = nullptr;
         head = head->next;
         int res = n->x;
         delete n;
         return res;
+    }
+
+private:
+    bool noMoreElements = false;
+public:
+    struct StopPolling : std::exception {
+        StopPolling() : std::exception("list stopped polling") {}
+    };
+
+    int poll() {
+        std::unique_lock lock(mtx);
+        while (isEmpty()) {
+            if (noMoreElements) {
+                throw StopPolling();
+            }
+            elementAdded.wait(lock);
+        }
+        Node* n = head;
+        n->next = nullptr;
+        head = head->next;
+        int res = n->x;
+        delete n;
+        return res;
+    }
+
+    void setNoMoreElements() {
+        noMoreElements = true;
+        elementAdded.notify_all();
     }
 
     void enqueue(int x) override {
@@ -521,6 +556,7 @@ public:
             tail->next = n;
             tail = n;
         }
+        elementAdded.notify_all();
     }
 };
 
@@ -532,10 +568,32 @@ void bar(Queue& q) {
     q.enqueue(123);
 }
 
+LinkedList list;
+tsPrinter printer(std::cout);
+
+void pollExample(const std::string& threadName, int iters) {
+    try {
+        for (int n = 0; n < iters; n++) {
+            int i = list.poll();
+            std::stringstream ss;
+            ss << threadName << ": " << i;
+            printer.println(ss.str());
+        }
+    } catch (LinkedList::StopPolling& stopped) {
+        printer.println(stopped.what());
+    }
+}
 int main() {
-    LinkedList list;
-    std:cin >> list;
-    cout << list;
+    std::thread worker1(pollExample, "w1", 200);
+    std::thread worker2(pollExample, "w2", 300);
+
+    std::cin >> list;
+    std::cout << list;
+
+    list.setNoMoreElements();
+
+    worker1.join();
+    worker2.join();
 
     return 0;
 }
